@@ -40,6 +40,20 @@ def parse_date(s, year):
 def iso(y, m, d):
     return f"{y:04d}-{m:02d}-{d:02d}"
 
+LINK_RE = re.compile(r"\s*<<(https?://[^>]+)>>")
+
+def split_link(s):
+    """'Event <<https://x>>' -> ('Event', 'https://x'); plain URL -> ('', url)."""
+    m = LINK_RE.search(s)
+    if m:
+        return LINK_RE.sub("", s).strip(), m.group(1)
+    if s.startswith("http"):
+        return "", s
+    return s, ""
+
+def strip_link(s):
+    return LINK_RE.sub("", s).strip()
+
 text = open(sys.argv[1], encoding="utf-8").read()
 sheets = re.split(r"^## Sheet name: (.+)$", text, flags=re.M)
 events = []
@@ -66,6 +80,7 @@ for i in range(1, len(sheets), 2):
         else:
             date, artist, venue, source, promoter = r[:5]; jp = ""
         artist, jp, venue, source, promoter = [x.strip() for x in (artist, jp, venue, source, promoter)]
+        artist, jp, venue, promoter = [strip_link(x) for x in (artist, jp, venue, promoter)]
         if date.strip():
             if year is None and not re.search(r"\d{4}", date):
                 continue
@@ -73,9 +88,7 @@ for i in range(1, len(sheets), 2):
             cur = None
             if not pd:
                 continue
-            title, link = source, ""
-            if source.startswith("http"):
-                title, link = "", source
+            title, link = split_link(source)
             cur = {"s": pd[0], "e": pd[1], "x": pd[2], "raw": date.strip(),
                    "t": title, "u": link, "v": venue, "p": promoter, "a": []}
             if len(pd) > 3: cur["approx"] = True
@@ -85,12 +98,15 @@ for i in range(1, len(sheets), 2):
             if artist: cur["a"].append([artist, jp])
             if venue and not cur["v"]: cur["v"] = venue
             if source:
-                if source.startswith("http"):
-                    cur["u"] = cur["u"] or source
+                stext, slink = split_link(source)
+                if slink and not cur["u"]:
+                    cur["u"] = slink
+                if not stext:
+                    pass
                 elif not cur["t"]:
-                    cur["t"] = source
+                    cur["t"] = stext
                 else:
-                    cur["note"] = source
+                    cur["note"] = stext
 events.sort(key=lambda e: e["s"])
 for e in events:
     if not e["x"]: del e["x"]

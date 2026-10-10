@@ -122,6 +122,8 @@ header.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spa
 .ev .title a{color:inherit;text-decoration-color:var(--red);text-underline-offset:3px}
 .ev .meta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:2px}
 .ev .meta span{overflow-wrap:anywhere}
+.ev .meta .src{color:var(--red);text-decoration:none;font-weight:500;white-space:nowrap}
+.ev .meta .src:hover{text-decoration:underline;text-underline-offset:3px}
 .tag{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:3px;background:var(--red-soft);color:var(--red);letter-spacing:.03em}
 .artists{display:flex;flex-wrap:wrap;gap:4px 6px;margin:6px 0 0;padding:0;list-style:none}
 .artists li{font-size:13px;border:1px solid var(--line);border-radius:4px;padding:1px 7px;background:var(--card)}
@@ -301,13 +303,14 @@ function render(){
   renderAgenda();
 }
 
+function srcHost(u){try{const h=new URL(u).hostname.replace(/^(www|m|web|mobile)\./,"");return ({"twitter.com":"X","x.com":"X","facebook.com":"Facebook","fb.com":"Facebook","instagram.com":"Instagram","ticketmelon.com":"Ticketmelon","thaiticketmajor.com":"Thai Ticket Major","eventpop.me":"Eventpop","theconcert.com":"The Concert","youtube.com":"YouTube","youtu.be":"YouTube"})[h]||h;}catch(_){return "link";}}
 function evHTML(e,dayKey){
   const title=e.u?`<a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(evName(e))}</a>`:esc(evName(e));
   const tags=[];
   if(e.approx) tags.push(`<span class="tag">day TBA</span>`);
   else if(e.multi) tags.push(`<span class="tag">${esc(e.raw)}</span>`);
   if((e.e||e.s)<TODAY) tags.push(`<span class="tag" style="background:var(--line);color:var(--muted)">past</span>`);
-  const meta=[e.v?`<span>📍 ${esc(e.v)}</span>`:"",e.p?`<span>Promoter: ${esc(e.p)}</span>`:"",e.note?`<span>${esc(e.note)}</span>`:""].join("");
+  const meta=[e.v?`<span>📍 ${esc(e.v)}</span>`:"",e.p?`<span>Promoter: ${esc(e.p)}</span>`:"",e.note?`<span>${esc(e.note)}</span>`:"",e.u?`<a class="src" href="${esc(e.u)}" target="_blank" rel="noopener">Source: ${esc(srcHost(e.u))} ↗</a>`:""].join("");
   const artists=e.a.length?`<ul class="artists">${e.a.map(a=>`<li><button class="artist" data-ak="${esc(akey(a[0]))}" aria-label="Show details for ${esc(a[0])}">${esc(a[0])}${a[1]?`<span class="jp">${esc(a[1])}</span>`:""}</button></li>`).join("")}</ul>`:"";
   return `<article class="ev"><p class="title">${title} ${tags.join(" ")}</p>${meta?`<div class="meta">${meta}</div>`:""}${artists}</article>`;
 }

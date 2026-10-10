@@ -11,13 +11,23 @@ def cell(v):
         return str(int(v))
     return str(v)
 
-wb = openpyxl.load_workbook(sys.argv[1], read_only=True, data_only=True)
+LINK = " <<{}>>"  # parse.py splits "Event name <<https://...>>" back into title + link
+
+def cell_text(c):
+    s = cell(c.value)
+    target = c.hyperlink.target if c.hyperlink is not None else None
+    if s and target and target.startswith("http") and not s.strip().startswith("http"):
+        s += LINK.format(target.strip())
+    return s
+
+# not read_only: cell hyperlinks are only available in the full loader
+wb = openpyxl.load_workbook(sys.argv[1], data_only=True)
 out = io.StringIO()
 for ws in wb.worksheets:
     out.write(f"## Sheet name: {ws.title}\n")
     w = csv.writer(out, lineterminator="\n")
-    for row in ws.iter_rows(values_only=True):
-        r = [cell(v) for v in row]
+    for row in ws.iter_rows():
+        r = [cell_text(c) for c in row]
         while r and r[-1] == "":
             r.pop()
         if r:
