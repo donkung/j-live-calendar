@@ -1,0 +1,59 @@
+name: Rebuild calendar from sheet
+
+on:
+  schedule:
+    - cron: "17 23 * * *"   # 06:17 Bangkok time, daily
+  push:
+    branches: [main]
+  workflow_dispatch:         # "Run workflow" button for a manual refresh
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  SHEET_ID: 1EShN2E7TZHCI6U5oS2CKByYXTUDIHZJnJwodrgWvN3k
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install openpyxl==3.1.5
+
+      - name: Download sheet
+        run: |
+          curl -fsSL -o sheet.xlsx \
+            "https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx"
+
+      - name: Parse and build
+        run: |
+          python scripts/xlsx_to_text.py sheet.xlsx > data.txt
+          python scripts/parse.py data.txt > events.json
+          python scripts/build.py events.json
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

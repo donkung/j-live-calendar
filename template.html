@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>J-Live Thailand Calendar</title>
+<meta name="description" content="Calendar of Japanese artist concerts and events in Thailand, built from the strobolights J-con sheet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500&display=swap">
+<style>
+/* Layout: gig-poster masthead, month grid like a tour-date wall, agenda of setlist-style entries below */
+:root{
+  --paper:#f6f5f2; --card:#ffffff; --ink:#1b1d2b; --muted:#5f6275; --line:#dcdbe2;
+  --red:#d7263d; --red-soft:#fbe3e6; --indigo:#2f3a8f; --indigo-soft:#e5e8f7; --today:#fff3c4;
+  --display:"Dela Gothic One","Zen Kaku Gothic New",system-ui,sans-serif;
+  --body:"IBM Plex Sans Thai","Zen Kaku Gothic New",system-ui,-apple-system,sans-serif;
+  --jp:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#13141c; --card:#1c1e29; --ink:#ecebf2; --muted:#a3a5b8; --line:#2f3142;
+  --red:#ff5468; --red-soft:#3b1a22; --indigo:#a9b3ff; --indigo-soft:#262b4d; --today:#3a3416; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#13141c; --card:#1c1e29; --ink:#ecebf2; --muted:#a3a5b8; --line:#2f3142;
+  --red:#ff5468; --red-soft:#3b1a22; --indigo:#a9b3ff; --indigo-soft:#262b4d; --today:#3a3416; color-scheme:dark}
+html{background:var(--paper)}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 64px;display:flex;flex-direction:column;gap:20px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+header.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;border-bottom:3px solid var(--ink);padding-bottom:14px}
+.mast h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,4.4vw,42px);line-height:1.05;margin:0;letter-spacing:.01em;text-wrap:balance}
+.mast h1 .dot{color:var(--red)}
+.mast .sub{margin:6px 0 0;color:var(--muted);font-size:13px}
+.mast .sub a{color:inherit}
+.mast .jp{font-family:var(--jp);font-size:13px;color:var(--muted);margin:0}
+
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.monthlabel{font-family:var(--display);font-size:clamp(22px,3.4vw,30px);font-weight:400;min-width:7.5em;margin:0 6px}
+.monthlabel small{font-family:var(--mono);font-size:13px;color:var(--muted);margin-left:8px;letter-spacing:.04em}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer;line-height:1.3}
+.btn:hover{border-color:var(--ink)}
+.btn.icon{width:36px;padding:6px 0;text-align:center}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.ypick{position:relative}
+.ypop{position:absolute;top:calc(100% + 6px);left:0;z-index:15;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:10px;width:264px;max-width:calc(100vw - 32px)}
+.yhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.mbtn{all:unset;cursor:pointer;display:inline-flex;align-items:baseline;gap:8px;border-radius:6px;padding:0 6px}
+.mbtn:hover{background:var(--indigo-soft)}
+.mbtn:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.mbtn .caret{font-family:var(--mono);font-size:14px;color:var(--red)}
+.monthlabel{margin:0}
+.ypop{overflow:hidden}
+.ylabel{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;align-self:stretch;background:var(--indigo-soft);color:var(--ink);border:1px solid transparent;border-radius:6px;font-family:var(--mono);font-size:13px;font-weight:500;padding:0 8px;white-space:nowrap;cursor:pointer}
+.ylabel:hover{border-color:var(--ink)}
+.ylabel small{font-weight:400;color:var(--muted);font-size:11px}
+.ylabel .up{color:var(--red);font-size:11px}
+.ylabel.static{cursor:default;background:var(--paper)}
+.ylabel.static:hover{border-color:transparent}
+.ygrid.months .yy{font-size:14px}
+.yhead .btn:disabled{opacity:.35;cursor:default}
+.ygrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.ycell{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px;border:1px solid var(--line);border-radius:6px;background:var(--card);cursor:pointer;line-height:1.2}
+.ycell .yy{font-family:var(--mono);font-weight:500;font-size:15px}
+.ycell .yb{font-size:10px;color:var(--muted)}
+.ycell .yc{font-family:var(--mono);font-size:10px;color:var(--red)}
+.ycell:hover:not(:disabled){border-color:var(--ink)}
+.ycell:disabled{opacity:.35;cursor:default}
+.ycell.cur{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.ycell.cur .yb,.ycell.cur .yc{color:var(--paper)}
+.ycell.now{box-shadow:inset 0 0 0 2px var(--red)}
+.ycell.cur.now{box-shadow:none}
+.search{position:relative;flex:1 1 240px;max-width:360px}
+.search input{width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px 12px}
+.search input:focus{border-color:var(--ink);outline:none}
+
+.mright{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.theme{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--card)}
+.theme button{border:0;background:none;padding:4px 12px;font-size:12px;cursor:pointer;color:var(--muted)}
+.theme button+button{border-left:1px solid var(--line)}
+.theme button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+@media (max-width:720px){.mright{align-items:flex-start}}
+.stats{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.stats b{font-family:var(--mono);color:var(--ink);font-weight:500}
+
+/* calendar grid */
+.calwrap{overflow-x:auto}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);background:var(--card)}
+.dow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper)}
+.dow.we{color:var(--red)}
+.day{min-height:112px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:3px;min-width:0;cursor:default;background:var(--card);text-align:left}
+.day.out{background:var(--paper)}
+.day.out .num{opacity:.4}
+.day.has{cursor:pointer}
+.day.has:hover{box-shadow:inset 0 0 0 2px var(--line)}
+.day.sel{box-shadow:inset 0 0 0 2px var(--red)}
+.day.today{background:var(--today)}
+.num{font-family:var(--mono);font-size:12px;font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.num .cnt{display:none;background:var(--red);color:#fff;border-radius:9px;font-size:10px;padding:0 6px;line-height:16px}
+.chip{display:block;font-size:12px;line-height:1.3;padding:2px 6px;border-radius:3px;background:var(--indigo-soft);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--indigo)}
+.chip.multi{background:var(--red-soft);border-left-color:var(--red)}
+.more{font-size:11px;color:var(--muted);padding-left:4px}
+
+/* agenda */
+.agenda h2{font-family:var(--display);font-weight:400;font-size:20px;margin:8px 0 4px}
+.agenda .hint{color:var(--muted);font-size:13px;margin:0 0 8px}
+.dayblock{display:grid;grid-template-columns:76px minmax(0,1fr);gap:0 16px;padding:14px 0;border-top:1px solid var(--line);scroll-margin-top:16px}
+.dayblock.flash{animation:flash 1.4s ease}
+@keyframes flash{0%{background:var(--today)}100%{background:transparent}}
+.dlabel{font-family:var(--mono);line-height:1.1}
+.dlabel .d{font-family:var(--display);font-size:30px;display:block}
+.dlabel .w{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.dlabel .w.we{color:var(--red)}
+.evlist{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ev{min-width:0}
+.ev .title{font-weight:600;font-size:15px;margin:0;overflow-wrap:anywhere}
+.ev .title a{color:inherit;text-decoration-color:var(--red);text-underline-offset:3px}
+.ev .meta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:2px}
+.ev .meta span{overflow-wrap:anywhere}
+.tag{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:3px;background:var(--red-soft);color:var(--red);letter-spacing:.03em}
+.artists{display:flex;flex-wrap:wrap;gap:4px 6px;margin:6px 0 0;padding:0;list-style:none}
+.artists li{font-size:13px;border:1px solid var(--line);border-radius:4px;padding:1px 7px;background:var(--card)}
+.artists li .jp{font-family:var(--jp);color:var(--muted);margin-left:5px;font-size:12px}
+.empty{padding:28px 0;color:var(--muted);border-top:1px solid var(--line)}
+.results .res{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 16px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
+.results .res:hover .title{color:var(--red)}
+.results .rd{font-family:var(--mono);font-size:13px}
+.results .rd .past{color:var(--muted)}
+.artists li button{all:unset;cursor:pointer;display:inline}
+.artists li:has(button):hover{border-color:var(--red)}
+.artists li:has(button:focus-visible){outline:2px solid var(--red);outline-offset:1px}
+
+/* artist drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,10,20,.45);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--card);color:var(--ink);z-index:21;box-shadow:-8px 0 30px rgba(0,0,0,.18);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer .dh{padding:20px 20px 14px;border-bottom:3px solid var(--ink);display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.drawer h3{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.1;margin:0;text-wrap:balance;overflow-wrap:anywhere}
+.drawer .djp{font-family:var(--jp);color:var(--muted);margin:4px 0 0;font-size:15px}
+.drawer .body{overflow-y:auto;padding:16px 20px 28px;display:flex;flex-direction:column;gap:18px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fact{border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.fact b{display:block;font-family:var(--mono);font-size:18px;font-weight:500}
+.fact span{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.drawer h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:500}
+.links{display:flex;flex-wrap:wrap;gap:6px}
+.links a{font-size:13px;border:1px solid var(--line);border-radius:4px;padding:3px 9px;color:var(--ink);text-decoration:none}
+.links a:hover{border-color:var(--red);color:var(--red)}
+.shows{display:flex;flex-direction:column}
+.show{display:grid;grid-template-columns:92px minmax(0,1fr);gap:2px 12px;padding:9px 0;border-top:1px solid var(--line);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
+.show:hover .st{color:var(--red)}
+.show .sd{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.show .sd.up{color:var(--red);font-weight:500}
+.show .st{font-weight:500;font-size:14px;overflow-wrap:anywhere}
+.show .sv{font-size:12px;color:var(--muted);grid-column:2;overflow-wrap:anywhere}
+.cobill{display:flex;flex-wrap:wrap;gap:6px}
+.cobill button{font-size:13px;border:1px solid var(--line);border-radius:4px;padding:2px 8px;background:var(--card);cursor:pointer}
+.cobill button:hover{border-color:var(--red)}
+.cobill small{font-family:var(--mono);color:var(--muted);margin-left:4px}
+@media (max-width:720px){.drawer{top:auto;height:86%;width:100%;border-radius:14px 14px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.2)}}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+footer a{color:inherit}
+
+@media (max-width:720px){
+  .day{min-height:54px;padding:4px;align-items:center}
+  .num{flex-direction:column;gap:3px}
+  .num .cnt{display:inline-block}
+  .chip,.more{display:none}
+  .dow{padding:6px 2px;text-align:center;font-size:10px;letter-spacing:.04em}
+  .dayblock{grid-template-columns:52px minmax(0,1fr);gap:0 12px}
+  .dlabel .d{font-size:24px}
+  .results .res{grid-template-columns:1fr}
+  .monthlabel{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){.dayblock.flash{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <h1>J-Live in Thailand<span class="dot">.</span></h1>
+      <p class="jp">タイで開催される日本のアーティストのライブ・コンサート情報</p>
+      <p class="sub">Calendar view of the community sheet by <a href="https://linktr.ee/strobolightslovemusic" target="_blank" rel="noopener">strobolights</a> · updated __UPDATED__</p>
+    </div>
+    <div class="mright">
+      <div class="theme" role="group" aria-label="Colour theme">
+        <button data-t="auto" aria-pressed="true">Auto</button>
+        <button data-t="light" aria-pressed="false">Light</button>
+        <button data-t="dark" aria-pressed="false">Dark</button>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="nav">
+      <button class="btn" id="todayBtn">Today</button>
+      <button class="btn icon" id="prev" aria-label="Previous month">‹</button>
+      <button class="btn icon" id="next" aria-label="Next month">›</button>
+      <div class="ypick">
+        <h2 class="monthlabel"><button class="mbtn" id="yearBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="yearPop"><span id="mlabel" aria-live="polite"></span><span class="caret" aria-hidden="true">▾</span></button></h2>
+        <div class="ypop" id="yearPop" role="dialog" aria-label="Choose month and year" hidden>
+          <div class="yhead">
+            <button class="btn icon" id="ypPrev">‹</button>
+            <button class="ylabel" id="ypRange"></button>
+            <button class="btn icon" id="ypNext">›</button>
+          </div>
+          <div class="ygrid" id="ypGrid"></div>
+        </div>
+      </div>
+      <button class="btn" id="nextUp">Next show →</button>
+    </div>
+    <div class="search"><input id="q" type="search" placeholder="Search artist, venue, event…" aria-label="Search all events"></div>
+  </div>
+
+  <section id="calView">
+    <div class="calwrap"><div class="cal" id="cal"></div></div>
+    <div class="agenda" id="agenda"></div>
+  </section>
+  <section class="results" id="results" hidden></section>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dname" hidden>
+    <div class="dh"><div><h3 id="dname"></h3><p class="djp" id="djp"></p></div><button class="btn icon" id="dclose" aria-label="Close artist details">✕</button></div>
+    <div class="body" id="dbody"></div>
+  </aside>
+
+  <footer>Data from the strobolights “J-con in Thai” spreadsheet. Entries with an unknown day (like “? Feb”) are left off the grid; month-only entries are pinned to the 1st and marked “day TBA”. Check the promoter’s page before buying tickets.</footer>
+</div>
+
+<script>
+const EVENTS = __DATA__;
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const pad=n=>String(n).padStart(2,"0");
+const key=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+const now=new Date(); const TODAY=key(now.getFullYear(),now.getMonth(),now.getDate());
+
+// index by day
+const byDay=new Map();
+EVENTS.forEach((e,i)=>{
+  e.id=i;
+  const days=[]; const s=new Date(e.s+"T00:00:00"); const end=new Date((e.e||e.s)+"T00:00:00");
+  for(let d=new Date(s), n=0; d<=end && n<40; d.setDate(d.getDate()+1), n++) days.push(key(d.getFullYear(),d.getMonth(),d.getDate()));
+  (e.x||[]).forEach(x=>days.push(x));
+  e.multi = days.length>1;
+  days.forEach(k=>{ if(!byDay.has(k)) byDay.set(k,[]); byDay.get(k).push(e); });
+});
+
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const headliner=e=>e.a.length?e.a[0][0]:(e.t||"Event");
+const evName=e=>e.t||(e.a.length?e.a.map(a=>a[0]).slice(0,3).join(", "):"Event");
+
+// artist index: normalise spelling differences ("Kirameki Unforent" / "Kirameki☆Unforent", "... from EXILE TRIBE")
+function akey(n){return String(n).toLowerCase().replace(/\(.*?\)/g,"").replace(/from exile tribe/g,"").replace(/[^\p{L}\p{N}]/gu,"");}
+const ARTISTS=new Map();
+EVENTS.forEach(e=>e.a.forEach(([n,jp])=>{
+  const k=akey(n); if(!k) return;
+  if(!ARTISTS.has(k)) ARTISTS.set(k,{names:new Map(),jp:"",ev:[]});
+  const A=ARTISTS.get(k); A.names.set(n,(A.names.get(n)||0)+1); if(jp&&!A.jp) A.jp=jp;
+  if(!A.ev.includes(e)) A.ev.push(e);
+}));
+const displayName=A=>[...A.names.entries()].sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length)[0][0];
+
+let view={y:now.getFullYear(),m:now.getMonth()}; let selected=null;
+const hash=(location.hash||"").slice(1); const hm=hash.match(/^(\d{4})-(\d{2})$/);
+if(hm){view={y:+hm[1],m:+hm[2]-1};}
+
+// stats + year select
+(function(){
+  const years=[...new Set(EVENTS.map(e=>+e.s.slice(0,4)))].sort((a,b)=>b-a);
+  const upcoming=EVENTS.filter(e=>(e.e||e.s)>=TODAY).length;
+  const thisYear=EVENTS.filter(e=>e.s.startsWith(String(now.getFullYear()))).length;
+  document.getElementById("stats").innerHTML=`<span><b>${upcoming}</b> upcoming</span><span><b>${thisYear}</b> in ${now.getFullYear()}</span><span><b>${EVENTS.length}</b> since ${years[years.length-1]}</span>`;
+})();
+
+function render(){
+  const {y,m}=view;
+  document.getElementById("mlabel").innerHTML=`${MONTHS[m]} ${y}<small>พ.ศ. ${y+543}</small>`;
+  try{history.replaceState(null,"","#"+y+"-"+pad(m+1));}catch(_){}
+  const first=new Date(y,m,1); const startDow=first.getDay();
+  const dim=new Date(y,m+1,0).getDate();
+  const cells=Math.ceil((startDow+dim)/7)*7;
+  let html=DOW.map((d,i)=>`<div class="dow${i===0||i===6?" we":""}">${d}</div>`).join("");
+  for(let c=0;c<cells;c++){
+    const d=new Date(y,m,1-startDow+c); const k=key(d.getFullYear(),d.getMonth(),d.getDate());
+    const out=d.getMonth()!==m; const evs=byDay.get(k)||[];
+    const cls=["day",out?"out":"",evs.length?"has":"",k===TODAY?"today":"",k===selected?"sel":""].join(" ");
+    const chips=evs.slice(0,3).map(e=>`<span class="chip${e.multi?" multi":""}" title="${esc(evName(e))}">${esc(headliner(e))}</span>`).join("");
+    const more=evs.length>3?`<span class="more">+${evs.length-3} more</span>`:"";
+    const tag=evs.length?"button":"div";
+    html+=`<${tag} class="${cls}" data-k="${k}" ${evs.length?`aria-label="${d.getDate()} ${MONTHS[d.getMonth()]}: ${evs.length} event${evs.length>1?"s":""}"`:""}><span class="num"><span>${d.getDate()}</span>${evs.length?`<span class="cnt">${evs.length}</span>`:""}</span>${chips}${more}</${tag}>`;
+  }
+  document.getElementById("cal").innerHTML=html;
+  renderAgenda();
+}
+
+function evHTML(e,dayKey){
+  const title=e.u?`<a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(evName(e))}</a>`:esc(evName(e));
+  const tags=[];
+  if(e.approx) tags.push(`<span class="tag">day TBA</span>`);
+  else if(e.multi) tags.push(`<span class="tag">${esc(e.raw)}</span>`);
+  if((e.e||e.s)<TODAY) tags.push(`<span class="tag" style="background:var(--line);color:var(--muted)">past</span>`);
+  const meta=[e.v?`<span>📍 ${esc(e.v)}</span>`:"",e.p?`<span>Promoter: ${esc(e.p)}</span>`:"",e.note?`<span>${esc(e.note)}</span>`:""].join("");
+  const artists=e.a.length?`<ul class="artists">${e.a.map(a=>`<li><button class="artist" data-ak="${esc(akey(a[0]))}" aria-label="Show details for ${esc(a[0])}">${esc(a[0])}${a[1]?`<span class="jp">${esc(a[1])}</span>`:""}</button></li>`).join("")}</ul>`:"";
+  return `<article class="ev"><p class="title">${title} ${tags.join(" ")}</p>${meta?`<div class="meta">${meta}</div>`:""}${artists}</article>`;
+}
+
+function renderAgenda(){
+  const {y,m}=view; const dim=new Date(y,m+1,0).getDate();
+  let html=`<h2>${MONTHS[m]} line-up</h2><p class="hint">Tap a date to jump to it. Red entries run over several days.</p>`; let any=false;
+  for(let d=1;d<=dim;d++){
+    const k=key(y,m,d); const evs=(byDay.get(k)||[]).filter(e=>e.s===k||(e.x||[]).includes(k)||d===1);
+    // show multi-day events on their start day, or on the 1st if they started last month
+    const list=evs.filter(e=>e.s===k||(e.x||[]).includes(k)||(d===1&&e.s<k));
+    if(!list.length) continue; any=true;
+    const wd=new Date(y,m,d).getDay();
+    html+=`<div class="dayblock" id="d-${k}"><div class="dlabel"><span class="d">${d}</span><span class="w${wd===0||wd===6?" we":""}">${DOW[wd]}</span></div><div class="evlist">${list.map(e=>evHTML(e,k)).join("")}</div></div>`;
+  }
+  if(!any) html+=`<div class="empty">No shows listed for ${MONTHS[m]} ${y}. Use the arrows or “Next show” to find one.</div>`;
+  document.getElementById("agenda").innerHTML=html;
+}
+
+function go(dm){ view.m+=dm; if(view.m<0){view.m=11;view.y--;} if(view.m>11){view.m=0;view.y++;} selected=null; render(); }
+document.getElementById("prev").onclick=()=>go(-1);
+document.getElementById("next").onclick=()=>go(1);
+document.getElementById("todayBtn").onclick=()=>{view={y:now.getFullYear(),m:now.getMonth()};selected=null;render();};
+// year picker: 3×3 pages of years, last page ends at the newest year in the sheet
+const YCOUNT=new Map(); EVENTS.forEach(e=>{const y=+e.s.slice(0,4);YCOUNT.set(y,(YCOUNT.get(y)||0)+1);});
+const YMAX=Math.max(...YCOUNT.keys()), YMIN=Math.min(...YCOUNT.keys());
+const yPop=document.getElementById("yearPop"), yBtn=document.getElementById("yearBtn");
+// two steps: tap the month title → months of that year (3×4); tap the year in the header → years (3×3)
+const MCOUNT=new Map(); EVENTS.forEach(e=>{const k=e.s.slice(0,7);MCOUNT.set(k,(MCOUNT.get(k)||0)+1);});
+// zoomable picker: months of a year (3×4) ⇄ years (3×3). Header bar zooms out to years; picking a year zooms back in to its months.
+let yPageEnd=YMAX, pickMode="month", pickYear=view.y;
+const pageEndFor=y=>YMAX-Math.floor((YMAX-y)/9)*9;
+const cnt=n=>n?n+" show"+(n===1?"":"s"):"–";
+const ypPrev=document.getElementById("ypPrev"), ypNext=document.getElementById("ypNext"), ypRange=document.getElementById("ypRange"), ypGrid=document.getElementById("ypGrid");
+function renderPicker(){
+  let h="";
+  if(pickMode==="year"){
+    const start=yPageEnd-8;
+    ypRange.textContent=`${start} – ${yPageEnd}`; ypRange.classList.add("static"); ypRange.setAttribute("aria-label",`Years ${start} to ${yPageEnd}`);
+    ypPrev.disabled=start<=YMIN; ypNext.disabled=yPageEnd>=YMAX;
+    ypPrev.setAttribute("aria-label","Earlier years"); ypNext.setAttribute("aria-label","Later years");
+    ypGrid.className="ygrid";
+    for(let y=start;y<=yPageEnd;y++){
+      const n=YCOUNT.get(y)||0;
+      h+=`<button class="ycell${y===pickYear?" cur":""}${y===now.getFullYear()?" now":""}" data-y="${y}" ${n?"":"disabled"} aria-label="${y}, ${cnt(n)}"><span class="yy">${y}</span><span class="yb">พ.ศ. ${y+543}</span><span class="yc">${cnt(n)}</span></button>`;
+    }
+  } else {
+    ypRange.innerHTML=`${pickYear} <small>พ.ศ. ${pickYear+543}</small><span class="up" aria-hidden="true">▴</span>`; ypRange.classList.remove("static"); ypRange.setAttribute("aria-label",`${pickYear}, show all years`);
+    ypPrev.disabled=pickYear<=YMIN; ypNext.disabled=pickYear>=YMAX;
+    ypPrev.setAttribute("aria-label","Previous year"); ypNext.setAttribute("aria-label","Next year");
+    ypGrid.className="ygrid months";
+    for(let m=0;m<12;m++){
+      const n=MCOUNT.get(`${pickYear}-${pad(m+1)}`)||0;
+      const cur=pickYear===view.y&&m===view.m, isNow=pickYear===now.getFullYear()&&m===now.getMonth();
+      h+=`<button class="ycell${cur?" cur":""}${isNow?" now":""}" data-m="${m}" ${n||cur||isNow?"":"disabled"} aria-label="${MONTHS[m]} ${pickYear}, ${cnt(n)}"><span class="yy">${MONTHS[m].slice(0,3)}</span><span class="yc">${cnt(n)}</span></button>`;
+    }
+  }
+  ypGrid.innerHTML=h;
+}
+function focusPick(){(ypGrid.querySelector(".ycell.cur")||ypGrid.querySelector(".ycell:not(:disabled)")||ypRange).focus();}
+function openYears(){pickMode="month";pickYear=view.y;renderPicker();yPop.hidden=false;yBtn.setAttribute("aria-expanded","true");focusPick();}
+function closeYears(focusBtn){if(yPop.hidden)return;yPop.hidden=true;yBtn.setAttribute("aria-expanded","false");if(focusBtn)yBtn.focus();}
+yBtn.onclick=()=>yPop.hidden?openYears():closeYears(true);
+ypRange.onclick=()=>{if(pickMode==="month"){pickMode="year";yPageEnd=pageEndFor(pickYear);renderPicker();focusPick();}};
+ypPrev.onclick=()=>{if(pickMode==="year")yPageEnd-=9;else pickYear--;renderPicker();};
+ypNext.onclick=()=>{if(pickMode==="year")yPageEnd=Math.min(YMAX,yPageEnd+9);else pickYear++;renderPicker();};
+ypGrid.addEventListener("click",ev=>{
+  const c=ev.target.closest(".ycell"); if(!c||c.disabled) return;
+  if(pickMode==="year"){pickYear=+c.dataset.y;pickMode="month";renderPicker();focusPick();return;}
+  view={y:pickYear,m:+c.dataset.m}; selected=null; closeYears(true); render();
+});
+// use the event path: the clicked cell may already be replaced by the re-rendered grid
+document.addEventListener("click",ev=>{if(!yPop.hidden&&!ev.composedPath().some(n=>n.classList&&n.classList.contains("ypick")))closeYears(false);});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&!yPop.hidden)closeYears(true);});
+document.getElementById("nextUp").onclick=()=>{
+  const e=EVENTS.find(e=>e.s>=TODAY); if(!e) return;
+  jumpTo(e.s);
+};
+function jumpTo(k){
+  view={y:+k.slice(0,4),m:+k.slice(5,7)-1}; selected=k; render();
+  // find the agenda block containing this event (start day, or the 1st for spill-overs)
+  const el=document.getElementById("d-"+k)||document.getElementById("d-"+k.slice(0,8)+"01");
+  if(el){el.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"start"});el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");}
+}
+document.getElementById("cal").addEventListener("click",ev=>{
+  const c=ev.target.closest(".day.has"); if(!c) return;
+  const k=c.dataset.k; const evs=byDay.get(k)||[];
+  // scroll to the block where the first event on this day is listed
+  const e=evs[0]; let target=k;
+  if(!document.getElementById("d-"+k) || +k.slice(5,7)-1!==view.m){
+    target = (e.s.slice(0,7)===k.slice(0,7)) ? e.s : k;
+  }
+  if(+k.slice(5,7)-1!==view.m || +k.slice(0,4)!==view.y){ jumpTo(k); return; }
+  selected=k; document.querySelectorAll(".day.sel").forEach(x=>x.classList.remove("sel")); c.classList.add("sel");
+  const el=document.getElementById("d-"+k)||document.getElementById("d-"+(e.s.slice(0,7)===k.slice(0,7)?e.s:k.slice(0,8)+"01"));
+  if(el){el.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"start"});el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");}
+});
+
+// search
+const qEl=document.getElementById("q");
+qEl.addEventListener("input",()=>{
+  const q=qEl.value.trim().toLowerCase();
+  const res=document.getElementById("results"), cal=document.getElementById("calView");
+  if(!q){res.hidden=true;cal.hidden=false;return;}
+  const hits=EVENTS.filter(e=>[e.t,e.v,e.p,e.note,...e.a.flat()].filter(Boolean).join(" ").toLowerCase().includes(q));
+  const up=hits.filter(e=>(e.e||e.s)>=TODAY), past=hits.filter(e=>(e.e||e.s)<TODAY).reverse();
+  const row=e=>{const d=new Date(e.s+"T00:00:00");return `<div class="res" role="button" tabindex="0" data-k="${e.s}"><div class="rd">${e.approx?MONTHS[d.getMonth()].slice(0,3):e.raw.replace(/\s+/g," ")} ${d.getFullYear()}</div>${evHTML(e)}</div>`;};
+  res.innerHTML=`<div class="agenda"><h2>${hits.length} match${hits.length===1?"":"es"} for “${esc(qEl.value.trim())}”</h2><p class="hint">Upcoming first, then past shows newest to oldest. Select one to open its month.</p></div>`+
+    (up.length?up.map(row).join(""):"")+(past.length?past.map(row).join(""):"")+(hits.length?"":`<div class="empty">Nothing matches. Try a shorter name or the Japanese spelling.</div>`);
+  res.hidden=false; cal.hidden=true;
+});
+// artist drawer
+const drawer=document.getElementById("drawer"), scrim=document.getElementById("scrim");
+let lastFocus=null;
+const fmtDate=e=>{const d=new Date(e.s+"T00:00:00");return e.approx?`${MONTHS[d.getMonth()].slice(0,3)} ${d.getFullYear()}`:`${e.raw.replace(/\s+/g," ")} ${d.getFullYear()}`;};
+function openArtist(k){
+  const A=ARTISTS.get(k); if(!A) return;
+  if(drawer.hidden) lastFocus=document.activeElement;
+  const name=displayName(A);
+  document.getElementById("dname").textContent=name;
+  document.getElementById("djp").textContent=A.jp||"";
+  const evs=[...A.ev].sort((a,b)=>a.s.localeCompare(b.s));
+  const up=evs.filter(e=>(e.e||e.s)>=TODAY), past=evs.filter(e=>(e.e||e.s)<TODAY).reverse();
+  const first=evs[0].s.slice(0,4);
+  const venues=new Set(evs.map(e=>e.v).filter(Boolean)).size;
+  const co=new Map();
+  evs.forEach(e=>e.a.forEach(([n])=>{const ck=akey(n); if(ck&&ck!==k) co.set(ck,(co.get(ck)||0)+1);}));
+  const coTop=[...co.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const q=encodeURIComponent(name), qj=encodeURIComponent(A.jp||name);
+  const show=e=>{const isUp=(e.e||e.s)>=TODAY;return `<button class="show" data-k="${e.s}"><span class="sd${isUp?" up":""}">${esc(fmtDate(e))}</span><span class="st">${esc(evName(e))}</span>${e.v?`<span class="sv">${esc(e.v)}</span>`:""}</button>`;};
+  document.getElementById("dbody").innerHTML=`
+    <div class="facts">
+      <div class="fact"><b>${evs.length}</b><span>shows listed</span></div>
+      <div class="fact"><b>${first}</b><span>first visit</span></div>
+      <div class="fact"><b>${venues}</b><span>venues</span></div>
+    </div>
+    <div><h4>Look them up</h4><div class="links">
+      <a href="https://open.spotify.com/search/${q}" target="_blank" rel="noopener">Spotify</a>
+      <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">YouTube</a>
+      <a href="https://en.wikipedia.org/w/index.php?search=${q}" target="_blank" rel="noopener">Wikipedia</a>
+      ${A.jp?`<a href="https://ja.wikipedia.org/w/index.php?search=${qj}" target="_blank" rel="noopener">Wikipedia 日本語</a>`:""}
+      <a href="https://x.com/search?q=${q}" target="_blank" rel="noopener">X</a>
+    </div></div>
+    ${up.length?`<div><h4>Upcoming in Thailand</h4><div class="shows">${up.map(show).join("")}</div></div>`:""}
+    ${past.length?`<div><h4>Past shows in Thailand</h4><div class="shows">${past.map(show).join("")}</div></div>`:""}
+    ${coTop.length?`<div><h4>Shared the bill with</h4><div class="cobill">${coTop.map(([ck,n])=>`<button class="artist" data-ak="${esc(ck)}">${esc(displayName(ARTISTS.get(ck)))}<small>×${n}</small></button>`).join("")}</div></div>`:""}`;
+  document.getElementById("dbody").scrollTop=0;
+  scrim.hidden=false; drawer.hidden=false;
+  document.getElementById("dclose").focus();
+}
+function closeArtist(){drawer.hidden=true;scrim.hidden=true;if(lastFocus&&document.contains(lastFocus))lastFocus.focus();}
+document.getElementById("dclose").onclick=closeArtist;
+scrim.onclick=closeArtist;
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&!drawer.hidden)closeArtist();});
+document.addEventListener("click",ev=>{
+  const b=ev.target.closest(".artist"); if(!b) return;
+  ev.stopPropagation(); openArtist(b.dataset.ak);
+},true);
+document.getElementById("dbody").addEventListener("click",ev=>{
+  const s=ev.target.closest(".show"); if(!s) return;
+  closeArtist(); qEl.value=""; document.getElementById("results").hidden=true; document.getElementById("calView").hidden=false;
+  jumpTo(s.dataset.k);
+});
+
+document.getElementById("results").addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.classList.contains("res")){ev.preventDefault();ev.target.click();}});
+document.getElementById("results").addEventListener("click",ev=>{
+  if(ev.target.closest("a")) return;
+  const r=ev.target.closest(".res"); if(!r) return;
+  qEl.value=""; document.getElementById("results").hidden=true; document.getElementById("calView").hidden=false;
+  jumpTo(r.dataset.k);
+});
+
+// theme toggle: Auto keeps whatever the viewer/app set; Light/Dark override it
+(function(){
+  const root=document.documentElement, hostTheme=root.getAttribute("data-theme");
+  const btns=[...document.querySelectorAll(".theme button")];
+  function apply(t){
+    if(t==="auto"){ if(hostTheme) root.setAttribute("data-theme",hostTheme); else root.removeAttribute("data-theme"); }
+    else root.setAttribute("data-theme",t);
+    btns.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.t===t)));
+  }
+  let saved="auto"; try{saved=localStorage.getItem("jlive-theme")||"auto";}catch(_){}
+  apply(saved);
+  btns.forEach(b=>b.onclick=()=>{apply(b.dataset.t);try{localStorage.setItem("jlive-theme",b.dataset.t);}catch(_){}});
+})();
+
+render();
+</script>
+</body>
+</html>
