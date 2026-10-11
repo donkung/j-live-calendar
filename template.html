@@ -267,7 +267,8 @@ EVENTS.forEach((e,i)=>{
 });
 
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const headliner=e=>e.a.length?e.a[0][0]:(e.t||"Event");
+// calendar label: the event name for multi-artist line-ups, otherwise the artist
+const headliner=e=>e.a.length>1?(e.t||`${e.a[0][0]} +${e.a.length-1}`):e.a.length?e.a[0][0]:(e.t||"Event");
 const evName=e=>e.t||(e.a.length?e.a.map(a=>a[0]).slice(0,3).join(", "):"Event");
 
 // artist index: normalise spelling differences ("Kirameki Unforent" / "Kirameki☆Unforent", "... from EXILE TRIBE")
