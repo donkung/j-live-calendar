@@ -93,7 +93,7 @@ header.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spa
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);background:var(--card)}
 .dow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper)}
 .dow.we{color:var(--red)}
-.day{min-height:112px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:3px;min-width:0;cursor:default;background:var(--card);text-align:left}
+.day{min-height:112px;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font:inherit;color:inherit;padding:6px;display:flex;flex-direction:column;gap:3px;min-width:0;cursor:default;background:var(--card);text-align:left}
 .day.out{background:var(--paper)}
 .day.out .num{opacity:.4}
 .day.has{cursor:pointer}
@@ -104,6 +104,17 @@ header.mast{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spa
 .num .cnt{display:none;background:var(--red);color:#fff;border-radius:9px;font-size:10px;padding:0 6px;line-height:16px}
 .chip{display:block;font-size:12px;line-height:1.3;padding:2px 6px;border-radius:3px;background:var(--indigo-soft);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--indigo)}
 .chip.multi{background:var(--red-soft);border-left-color:var(--red)}
+.chip.cx{background:transparent;border-left-color:var(--line);color:var(--muted);text-decoration:line-through}
+.ev.cx .title,.ev.cx .meta span,.ev.cx .artists li{opacity:.6}
+.ev.cx .title>a,.ev.cx .title>.tname{text-decoration:line-through}
+.tag.alert{background:var(--red);color:#fff}
+.tag.warn{background:var(--today);color:var(--ink);border:1px solid var(--line)}
+.vold{text-decoration:line-through;color:var(--muted);margin-left:6px}
+.artists li.wd{opacity:.55}
+.artists li.wd button{text-decoration:line-through}
+.artists li.wd::after{content:"dropped";font-family:var(--mono);font-size:10px;color:var(--red);margin-left:6px}
+.show.cx .st{text-decoration:line-through;color:var(--muted)}
+.show .cxl{font-family:var(--mono);font-size:10px;color:var(--red);margin-left:6px;text-decoration:none;display:inline-block}
 .more{font-size:11px;color:var(--muted);padding-left:4px}
 
 /* agenda */
@@ -277,7 +288,7 @@ if(hm){view={y:+hm[1],m:+hm[2]-1};}
 // stats + year select
 (function(){
   const years=[...new Set(EVENTS.map(e=>+e.s.slice(0,4)))].sort((a,b)=>b-a);
-  const upcoming=EVENTS.filter(e=>(e.e||e.s)>=TODAY).length;
+  const upcoming=EVENTS.filter(e=>!e.c&&(e.e||e.s)>=TODAY).length;
   const thisYear=EVENTS.filter(e=>e.s.startsWith(String(now.getFullYear()))).length;
   document.getElementById("stats").innerHTML=`<span><b>${upcoming}</b> upcoming</span><span><b>${thisYear}</b> in ${now.getFullYear()}</span><span><b>${EVENTS.length}</b> since ${years[years.length-1]}</span>`;
 })();
@@ -294,7 +305,7 @@ function render(){
     const d=new Date(y,m,1-startDow+c); const k=key(d.getFullYear(),d.getMonth(),d.getDate());
     const out=d.getMonth()!==m; const evs=byDay.get(k)||[];
     const cls=["day",out?"out":"",evs.length?"has":"",k===TODAY?"today":"",k===selected?"sel":""].join(" ");
-    const chips=evs.slice(0,3).map(e=>`<span class="chip${e.multi?" multi":""}" title="${esc(evName(e))}">${esc(headliner(e))}</span>`).join("");
+    const chips=evs.slice(0,3).map(e=>`<span class="chip${e.c?" cx":e.multi?" multi":""}" title="${e.c?"Cancelled: ":""}${esc(evName(e))}">${esc(headliner(e))}</span>`).join("");
     const more=evs.length>3?`<span class="more">+${evs.length-3} more</span>`:"";
     const tag=evs.length?"button":"div";
     html+=`<${tag} class="${cls}" data-k="${k}" ${evs.length?`aria-label="${d.getDate()} ${MONTHS[d.getMonth()]}: ${evs.length} event${evs.length>1?"s":""}"`:""}><span class="num"><span>${d.getDate()}</span>${evs.length?`<span class="cnt">${evs.length}</span>`:""}</span>${chips}${more}</${tag}>`;
@@ -305,19 +316,22 @@ function render(){
 
 function srcHost(u){try{const h=new URL(u).hostname.replace(/^(www|m|web|mobile)\./,"");return ({"twitter.com":"X","x.com":"X","facebook.com":"Facebook","fb.com":"Facebook","instagram.com":"Instagram","ticketmelon.com":"Ticketmelon","thaiticketmajor.com":"Thai Ticket Major","eventpop.me":"Eventpop","theconcert.com":"The Concert","youtube.com":"YouTube","youtu.be":"YouTube"})[h]||h;}catch(_){return "link";}}
 function evHTML(e,dayKey){
-  const title=e.u?`<a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(evName(e))}</a>`:esc(evName(e));
+  const title=e.u?`<a href="${esc(e.u)}" target="_blank" rel="noopener">${esc(evName(e))}</a>`:`<span class="tname">${esc(evName(e))}</span>`;
   const tags=[];
+  if(e.c) tags.push(`<span class="tag alert">Cancelled</span>`);
+  if(e.vo) tags.push(`<span class="tag warn">Venue changed</span>`);
+  if(e.wd) tags.push(`<span class="tag warn">Line-up changed</span>`);
   if(e.approx) tags.push(`<span class="tag">day TBA</span>`);
   else if(e.multi) tags.push(`<span class="tag">${esc(e.raw)}</span>`);
   if((e.e||e.s)<TODAY) tags.push(`<span class="tag" style="background:var(--line);color:var(--muted)">past</span>`);
-  const meta=[e.v?`<span>📍 ${esc(e.v)}</span>`:"",e.p?`<span>Promoter: ${esc(e.p)}</span>`:"",e.note?`<span>${esc(e.note)}</span>`:"",e.u?`<a class="src" href="${esc(e.u)}" target="_blank" rel="noopener">Source: ${esc(srcHost(e.u))} ↗</a>`:""].join("");
-  const artists=e.a.length?`<ul class="artists">${e.a.map(a=>`<li><button class="artist" data-ak="${esc(akey(a[0]))}" aria-label="Show details for ${esc(a[0])}">${esc(a[0])}${a[1]?`<span class="jp">${esc(a[1])}</span>`:""}</button></li>`).join("")}</ul>`:"";
-  return `<article class="ev"><p class="title">${title} ${tags.join(" ")}</p>${meta?`<div class="meta">${meta}</div>`:""}${artists}</article>`;
+  const meta=[e.v||e.vo?`<span>📍 ${esc(e.v||"New venue TBA")}${e.vo?`<span class="vold" title="Previous venue">${esc(e.vo)}</span>`:""}</span>`:"",e.p?`<span>Promoter: ${esc(e.p)}</span>`:"",e.note?`<span>${esc(e.note)}</span>`:"",e.u?`<a class="src" href="${esc(e.u)}" target="_blank" rel="noopener">Source: ${esc(srcHost(e.u))} ↗</a>`:""].join("");
+  const artists=e.a.length?`<ul class="artists">${e.a.map(a=>`<li${(e.wd||[]).includes(a[0])?' class="wd" title="Dropped from the line-up"':""}><button class="artist" data-ak="${esc(akey(a[0]))}" aria-label="Show details for ${esc(a[0])}">${esc(a[0])}${a[1]?`<span class="jp">${esc(a[1])}</span>`:""}</button></li>`).join("")}</ul>`:"";
+  return `<article class="ev${e.c?" cx":""}"><p class="title">${title} ${tags.join(" ")}</p>${meta?`<div class="meta">${meta}</div>`:""}${artists}</article>`;
 }
 
 function renderAgenda(){
   const {y,m}=view; const dim=new Date(y,m+1,0).getDate();
-  let html=`<h2>${MONTHS[m]} line-up</h2><p class="hint">Tap a date to jump to it. Red entries run over several days.</p>`; let any=false;
+  let html=`<h2>${MONTHS[m]} line-up</h2><p class="hint">Tap a date to jump to it. Red entries run over several days; struck-through entries were cancelled.</p>`; let any=false;
   for(let d=1;d<=dim;d++){
     const k=key(y,m,d); const evs=(byDay.get(k)||[]).filter(e=>e.s===k||(e.x||[]).includes(k)||d===1);
     // show multi-day events on their start day, or on the 1st if they started last month
@@ -335,11 +349,11 @@ document.getElementById("prev").onclick=()=>go(-1);
 document.getElementById("next").onclick=()=>go(1);
 document.getElementById("todayBtn").onclick=()=>{view={y:now.getFullYear(),m:now.getMonth()};selected=null;render();};
 // year picker: 3×3 pages of years, last page ends at the newest year in the sheet
-const YCOUNT=new Map(); EVENTS.forEach(e=>{const y=+e.s.slice(0,4);YCOUNT.set(y,(YCOUNT.get(y)||0)+1);});
+const YCOUNT=new Map(); EVENTS.forEach(e=>{if(e.c)return;const y=+e.s.slice(0,4);YCOUNT.set(y,(YCOUNT.get(y)||0)+1);});
 const YMAX=Math.max(...YCOUNT.keys()), YMIN=Math.min(...YCOUNT.keys());
 const yPop=document.getElementById("yearPop"), yBtn=document.getElementById("yearBtn");
 // two steps: tap the month title → months of that year (3×4); tap the year in the header → years (3×3)
-const MCOUNT=new Map(); EVENTS.forEach(e=>{const k=e.s.slice(0,7);MCOUNT.set(k,(MCOUNT.get(k)||0)+1);});
+const MCOUNT=new Map(); EVENTS.forEach(e=>{if(e.c)return;const k=e.s.slice(0,7);MCOUNT.set(k,(MCOUNT.get(k)||0)+1);});
 // zoomable picker: months of a year (3×4) ⇄ years (3×3). Header bar zooms out to years; picking a year zooms back in to its months.
 let yPageEnd=YMAX, pickMode="month", pickYear=view.y;
 const pageEndFor=y=>YMAX-Math.floor((YMAX-y)/9)*9;
@@ -386,7 +400,7 @@ ypGrid.addEventListener("click",ev=>{
 document.addEventListener("click",ev=>{if(!yPop.hidden&&!ev.composedPath().some(n=>n.classList&&n.classList.contains("ypick")))closeYears(false);});
 document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&!yPop.hidden)closeYears(true);});
 document.getElementById("nextUp").onclick=()=>{
-  const e=EVENTS.find(e=>e.s>=TODAY); if(!e) return;
+  const e=EVENTS.find(e=>!e.c&&e.s>=TODAY); if(!e) return;
   jumpTo(e.s);
 };
 function jumpTo(k){
@@ -440,7 +454,7 @@ function openArtist(k){
   evs.forEach(e=>e.a.forEach(([n])=>{const ck=akey(n); if(ck&&ck!==k) co.set(ck,(co.get(ck)||0)+1);}));
   const coTop=[...co.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
   const q=encodeURIComponent(name), qj=encodeURIComponent(A.jp||name);
-  const show=e=>{const isUp=(e.e||e.s)>=TODAY;return `<button class="show" data-k="${e.s}"><span class="sd${isUp?" up":""}">${esc(fmtDate(e))}</span><span class="st">${esc(evName(e))}</span>${e.v?`<span class="sv">${esc(e.v)}</span>`:""}</button>`;};
+  const show=e=>{const isUp=(e.e||e.s)>=TODAY;const dropped=(e.wd||[]).some(n=>akey(n)===k);const cx=e.c||dropped;return `<button class="show${cx?" cx":""}" data-k="${e.s}"><span class="sd${isUp&&!cx?" up":""}">${esc(fmtDate(e))}</span><span class="st">${esc(evName(e))}${cx?`<span class="cxl">${e.c?"cancelled":"dropped"}</span>`:""}</span>${e.v?`<span class="sv">${esc(e.v)}</span>`:""}</button>`;};
   document.getElementById("dbody").innerHTML=`
     <div class="facts">
       <div class="fact"><b>${evs.length}</b><span>shows listed</span></div>
