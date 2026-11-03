@@ -30,8 +30,7 @@ It is off until the `GOATCOUNTER_CODE` repository variable is set:
    name `GOATCOUNTER_CODE`, value `jlive-th`.
 3. **Actions → Rebuild calendar from sheet → Run workflow**.
 
-To also show the total under the page title, turn on
-**Settings → Allow adding visitor counts on your website** in GoatCounter.
+Counts are only visible in the GoatCounter dashboard; the page itself shows no counter.
 
 ## Run locally
 

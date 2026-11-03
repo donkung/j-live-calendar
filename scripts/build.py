@@ -8,21 +8,14 @@ import datetime, json, os, pathlib, re, sys
 def analytics_snippet(code):
     """GoatCounter page-view counting, enabled by the GOATCOUNTER_CODE repo variable.
 
-    Counts every page load (no cookies). The total is also shown under the title
-    when "Allow adding visitor counts" is turned on in the GoatCounter settings.
+    Counts every page load (no cookies). The count is only visible in the
+    GoatCounter dashboard, not on the page.
     """
     if not code:
         return ""
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,49}", code):
         sys.exit(f"GOATCOUNTER_CODE {code!r} is not a valid GoatCounter code (e.g. 'jlive-th').")
-    base = f"https://{code}.goatcounter.com"
-    return f"""<script data-goatcounter="{base}/count" async src="https://gc.zgo.at/count.v4.js"></script>
-<script>
-fetch("{base}/counter/TOTAL.json").then(r=>r.ok?r.json():null).then(d=>{{
-  if(!d||!d.count) return;
-  const el=document.getElementById("views"); el.textContent=" · "+d.count+" views"; el.hidden=false;
-}}).catch(()=>{{}});
-</script>"""
+    return f'<script data-goatcounter="https://{code}.goatcounter.com/count" async src="https://gc.zgo.at/count.v4.js"></script>'
 
 root = pathlib.Path(__file__).resolve().parent.parent
 events = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
