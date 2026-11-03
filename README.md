@@ -20,6 +20,19 @@ To refresh right away: **Actions → Rebuild calendar from sheet → Run workflo
 If the parse returns fewer than 100 events (for example, the sheet layout changed),
 the build fails and the last good version stays online.
 
+## Page views
+
+Views are counted with [GoatCounter](https://www.goatcounter.com) (free, no cookies).
+It is off until the `GOATCOUNTER_CODE` repository variable is set:
+
+1. Sign up at goatcounter.com and pick a code, e.g. `jlive-th` (your dashboard is then `https://jlive-th.goatcounter.com`).
+2. In this repo: **Settings → Secrets and variables → Actions → Variables → New repository variable**,
+   name `GOATCOUNTER_CODE`, value `jlive-th`.
+3. **Actions → Rebuild calendar from sheet → Run workflow**.
+
+To also show the total under the page title, turn on
+**Settings → Allow adding visitor counts on your website** in GoatCounter.
+
 ## Run locally
 
 ```sh

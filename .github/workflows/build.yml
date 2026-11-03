@@ -37,6 +37,8 @@ jobs:
             "https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx"
 
       - name: Parse and build
+        env:
+          GOATCOUNTER_CODE: ${{ vars.GOATCOUNTER_CODE }}   # Settings → Secrets and variables → Actions → Variables
         run: |
           python scripts/xlsx_to_text.py sheet.xlsx > data.txt
           python scripts/parse.py data.txt > events.json
